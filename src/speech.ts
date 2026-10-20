@@ -2,7 +2,7 @@ import { createContext, useContext, useSyncExternalStore } from 'react'
 import { loadSpeech, saveSpeech } from './db'
 
 export type SpeechStatus = 'idle' | 'loading' | 'playing' | 'error'
-type Current = { text: string; status: SpeechStatus; message?: string }
+type Current = { key: string; status: SpeechStatus; message?: string }
 
 let current: Current | null = null
 let context: AudioContext | null = null
@@ -10,6 +10,8 @@ let source: AudioBufferSourceNode | null = null
 let request = 0
 const listeners = new Set<() => void>()
 const inflight = new Map<string, Promise<ArrayBuffer>>()
+
+export const speechKey = (text: string, slow = false) => (slow ? `slow:${text}` : text)
 
 const publish = (next: Current | null) => {
   current = next
@@ -21,33 +23,39 @@ const subscribe = (listener: () => void) => {
   return () => listeners.delete(listener)
 }
 
-async function fetchSpeech(text: string): Promise<ArrayBuffer> {
-  const cached = await loadSpeech(text)
+async function fetchSpeech(text: string, slow: boolean): Promise<ArrayBuffer> {
+  const key = speechKey(text, slow)
+  const cached = await loadSpeech(key)
   if (cached) return cached
   const res = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, slow }),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error ?? `HTTP ${res.status}`)
   }
   const audio = await res.arrayBuffer()
-  await saveSpeech(text, audio)
+  await saveSpeech(key, audio)
   return audio
 }
 
-function audio(text: string) {
-  const pending = inflight.get(text) ?? fetchSpeech(text).finally(() => inflight.delete(text))
-  inflight.set(text, pending)
+function audio(text: string, slow: boolean) {
+  const key = speechKey(text, slow)
+  const pending = inflight.get(key) ?? fetchSpeech(text, slow).finally(() => inflight.delete(key))
+  inflight.set(key, pending)
   return pending
 }
 
-function audioContext() {
+export function setAudioSession(type: 'playback' | 'play-and-record') {
+  const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
+  if (session) session.type = type
+}
+
+export function audioContext() {
   if (!context) {
-    const session = (navigator as Navigator & { audioSession?: { type: string } }).audioSession
-    if (session) session.type = 'playback'
+    setAudioSession('playback')
     context = new AudioContext()
   }
   void context.resume()
@@ -61,13 +69,14 @@ export function stop() {
   publish(null)
 }
 
-export async function speak(text: string) {
+export async function speak(text: string, slow = false) {
   stop()
   const id = request
+  const key = speechKey(text, slow)
   const ctx = audioContext()
-  publish({ text, status: 'loading' })
+  publish({ key, status: 'loading' })
   try {
-    const buffer = await ctx.decodeAudioData((await audio(text)).slice(0))
+    const buffer = await ctx.decodeAudioData((await audio(text, slow)).slice(0))
     if (id !== request) return
     const node = ctx.createBufferSource()
     node.buffer = buffer
@@ -75,15 +84,15 @@ export async function speak(text: string) {
     node.onended = () => source === node && stop()
     source = node
     node.start()
-    publish({ text, status: 'playing' })
+    publish({ key, status: 'playing' })
   } catch (err) {
-    if (id === request) publish({ text, status: 'error', message: err instanceof Error ? err.message : String(err) })
+    if (id === request) publish({ key, status: 'error', message: err instanceof Error ? err.message : String(err) })
   }
 }
 
-export function useSpeech(text: string) {
+export function useSpeech(key: string) {
   const state = useSyncExternalStore(subscribe, () => current)
-  return state?.text === text ? state : { text, status: 'idle' as const }
+  return state?.key === key ? state : { key, status: 'idle' as const }
 }
 
 export const SpeechReady = createContext(true)

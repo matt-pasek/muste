@@ -8,6 +8,8 @@ import { parseAnswerPage, validateAnswers } from './server/answers.ts'
 import { lookupWord, validateWord } from './server/dictionary.ts'
 import { explainEvents } from './server/explain.ts'
 import { grammarGuide, validateTopic } from './server/grammar.ts'
+import { shadow, validateShadow } from './server/shadow.ts'
+import { restRun, type AiRun } from './server/stt.ts'
 import { synthesize, validateSpeech, type TtsConfig } from './server/tts.ts'
 
 type Handler = (apiKey: string, body: unknown, signal: AbortSignal, res: ServerResponse) => Promise<void>
@@ -60,7 +62,7 @@ const ttsRoute = (config: TtsConfig) => async (req: IncomingMessage, res: Server
   }
 }
 
-function devApi(apiKey: string | undefined, tts: TtsConfig): Plugin {
+function devApi(apiKey: string | undefined, tts: TtsConfig, ai: AiRun): Plugin {
   const route = (handler: Handler) => async (req: IncomingMessage, res: ServerResponse) => {
     if (!apiKey) return sendJson(res, 500, { error: 'Set ANTHROPIC_API_KEY in .env.local' })
     const ctrl = new AbortController()
@@ -83,6 +85,7 @@ function devApi(apiKey: string | undefined, tts: TtsConfig): Plugin {
       server.middlewares.use('/api/grammar', route(grammarHandler))
       server.middlewares.use('/api/dict', dictRoute)
       server.middlewares.use('/api/tts', ttsRoute(tts))
+      server.middlewares.use('/api/shadow', route(jsonHandler((key, body, signal) => shadow(key, ai, validateShadow(body), signal))))
     },
   }
 }
@@ -121,7 +124,7 @@ const pwa = VitePWA({
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), tailwindcss(), basicSsl(), devApi(env.ANTHROPIC_API_KEY, { apiKey: env.ELEVENLABS_API_KEY, voiceId: env.ELEVENLABS_VOICE_ID }), pwa],
+    plugins: [react(), tailwindcss(), basicSsl(), devApi(env.ANTHROPIC_API_KEY, { apiKey: env.ELEVENLABS_API_KEY, voiceId: env.ELEVENLABS_VOICE_ID }, restRun(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_AI_TOKEN)), pwa],
     server: { host: true },
   }
 })

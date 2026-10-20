@@ -201,6 +201,12 @@
 }
 .listen-button { vertical-align: middle; margin-block: -0.4em; color: var(--usva-accent); }
 .listen-button.is-error { color: var(--usva-danger); }
+.shadow-button.is-recording { color: var(--usva-danger); animation: rec 1s var(--usva-ease-soft) infinite alternate; }
+.rec-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--usva-danger); animation: rec 1s var(--usva-ease-soft) infinite alternate; }
+@keyframes rec { to { opacity: 0.45; } }
+.shadow-miss { color: inherit; background: color-mix(in srgb, var(--usva-danger) 16%, transparent); border-radius: 3px; padding-inline: 1px; }
+.text-danger-ink { color: var(--usva-danger); }
+.text-success-ink { color: var(--usva-success); }
 mark.case-mark.spoken-mark { background: color-mix(in srgb, var(--case, var(--usva-accent)) 14%, transparent); }
 
 .gesture-toast { animation: toast 1.4s var(--usva-ease-soft) both; }

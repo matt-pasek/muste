@@ -1,6 +1,8 @@
 import { Fragment, useState } from 'react'
 import { caseClass, caseLabel, isCase } from './cases'
 import { ListenButton } from './ListenButton'
+import { ShadowButton, ShadowFeedback } from './ShadowPractice'
+import { useShadow } from './useShadow'
 import type { PartialExplanation } from './lookup'
 import { useOpenReference } from './reference'
 import type { Register } from './useRegister'
@@ -36,14 +38,18 @@ type SentenceProps = { fi: string; spoken?: string; en?: string; words: (Partial
 
 export function Sentence({ fi, spoken, en, words, register, large = false }: SentenceProps) {
   const showSpoken = register === 'puhe' && !!spoken
+  const target = showSpoken ? spoken : fi
+  const practice = useShadow(target)
   return (
     <>
       <p key={showSpoken ? 'puhe' : 'kirja'} className="enter font-medium">
         {showSpoken ? <Highlighted text={spoken} words={words} written={fi} /> : <Highlighted text={fi} words={words} />}
-        <ListenButton text={showSpoken ? spoken : fi} className="ml-1" />
+        <ListenButton text={target} className="ml-1" />
+        <ShadowButton state={practice.state} onToggle={practice.toggle} />
       </p>
       {showSpoken && <p className="text-sm text-muted">{fi}</p>}
       {en && <p className={large ? 'mt-0.5 text-muted' : 'text-sm text-muted'}>{en}</p>}
+      <ShadowFeedback state={practice.state} target={target} onRetry={practice.toggle} onClose={practice.reset} />
     </>
   )
 }

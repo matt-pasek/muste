@@ -61,6 +61,21 @@ export const StopIcon = () => (
   </Icon>
 )
 
+export const SlowIcon = () => (
+  <Icon>
+    <path d="M3 17h13a4 4 0 004-4v0a4 4 0 00-4-4h-1" />
+    <path d="M5 17a6 6 0 0112 0" />
+    <path d="M18 9.5V7.5M20.5 10.5l1-1" />
+  </Icon>
+)
+
+export const MicIcon = () => (
+  <Icon>
+    <rect x="9" y="3.5" width="6" height="11" rx="3" />
+    <path d="M5.5 11.5a6.5 6.5 0 0013 0M12 18v2.5" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M6 6l12 12M18 6L6 18" />
