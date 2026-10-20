@@ -1,7 +1,7 @@
 import { Button } from '@usva-ui/react/primitives/button'
 import { Callout } from '@usva-ui/react/primitives/callout'
 import { Dialog } from '@usva-ui/react/primitives/dialog'
-import { AnimatePresence, LayoutGroup } from 'motion/react'
+import { AnimatePresence, LayoutGroup, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Controls } from './ConversationControls'
 import { ConversationSettings } from './ConversationSettings'
@@ -131,10 +131,40 @@ function Room({ chat, register, onRegister }: SessionProps) {
   )
 }
 
+const GLOW_REST: Record<Phase, number> = { idle: 0.12, opening: 0.3, recording: 0.22, thinking: 0.3, speaking: 0.4 }
+
+function useGlow(phase: Phase, level: () => number) {
+  const glow = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+
+  useEffect(() => {
+    const node = glow.current
+    if (!node) return
+    if (reduced) {
+      node.style.setProperty('--glow', String(GLOW_REST[phase]))
+      return
+    }
+    let smooth = Number(node.style.getPropertyValue('--glow')) || 0
+    const started = performance.now()
+    let frame = requestAnimationFrame(function tick(now) {
+      const rest = GLOW_REST[phase]
+      const live = phase === 'recording' || phase === 'speaking' ? level() * 0.6 : 0
+      const breath = phase === 'thinking' || phase === 'opening' ? Math.sin((now - started) / 700) * 0.12 : 0
+      smooth += (rest + live + breath - smooth) * 0.12
+      node.style.setProperty('--glow', smooth.toFixed(3))
+      frame = requestAnimationFrame(tick)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [phase, level, reduced])
+
+  return glow
+}
+
 function Stage({ phase, settled, level }: { phase: Phase; settled: boolean; level: () => number }) {
   const size = useStageSize()
   const [value, setValue] = useState(0)
   const yielded = phase === 'idle' || phase === 'recording'
+  const glow = useGlow(phase, level)
 
   useEffect(() => {
     if (phase !== 'recording' && phase !== 'speaking') return
@@ -152,7 +182,7 @@ function Stage({ phase, settled, level }: { phase: Phase; settled: boolean; leve
     <div className="grid place-items-center py-2 landscape:lg:row-span-2 landscape:lg:row-start-2">
       <div className="grid place-items-center" style={{ width: size, height: size }}>
         <div
-          className="stage-presence grid place-items-center"
+          className="stage-presence relative grid place-items-center"
           data-yielded={yielded || undefined}
           style={{ '--stage': `${size}px`, '--yielded': YIELDED } as CSSProperties}
         >
@@ -166,6 +196,7 @@ function Stage({ phase, settled, level }: { phase: Phase; settled: boolean; leve
               style={{ width: '100%', height: '100%' }}
             />
           )}
+          <div ref={glow} aria-hidden className="virva-glow" />
         </div>
       </div>
     </div>

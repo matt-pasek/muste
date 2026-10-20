@@ -242,6 +242,33 @@
   height: var(--stage);
   transition: width 650ms cubic-bezier(0.16, 0.84, 0.24, 1), height 650ms cubic-bezier(0.16, 0.84, 0.24, 1), opacity 650ms cubic-bezier(0.16, 0.84, 0.24, 1);
 }
+.virva-glow {
+  --glow: 0;
+  --light: var(--usva-live, var(--usva-accent));
+  position: absolute;
+  left: 50%;
+  top: 88%;
+  width: 118%;
+  height: 34%;
+  translate: -50% -50%;
+  scale: calc(0.78 + var(--glow) * 0.42) calc(0.7 + var(--glow) * 0.5);
+  opacity: calc(var(--glow) * 0.9);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklab, color-mix(in oklab, var(--light) 75%, white) 90%, transparent),
+    color-mix(in oklab, var(--light) 55%, transparent) 22%,
+    color-mix(in oklab, var(--usva-info, var(--usva-accent)) 30%, transparent) 45%,
+    color-mix(in oklab, var(--usva-info, var(--usva-accent)) 12%, transparent) 66%,
+    color-mix(in oklab, var(--usva-info, var(--usva-accent)) 3%, transparent) 84%,
+    transparent
+  );
+  mix-blend-mode: plus-lighter;
+  filter: blur(22px);
+  z-index: 1;
+  pointer-events: none;
+}
+
 .stage-presence canvas { width: 100% !important; height: 100% !important; }
 .talk-button svg { width: 2rem; height: 2rem; }
 .stage-presence[data-yielded] { width: calc(var(--stage) * var(--yielded)); height: calc(var(--stage) * var(--yielded)); opacity: 0.72; }
