@@ -201,11 +201,64 @@
 }
 .listen-button { vertical-align: middle; margin-block: -0.4em; color: var(--usva-accent); }
 .listen-button.is-error { color: var(--usva-danger); }
-.shadow-button.is-recording { color: var(--usva-danger); animation: rec 1s var(--usva-ease-soft) infinite alternate; }
+.shadow-button.is-recording { color: var(--usva-accent); animation: rec 1s var(--usva-ease-soft) infinite alternate; }
 .rec-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--usva-danger); animation: rec 1s var(--usva-ease-soft) infinite alternate; }
 @keyframes rec { to { opacity: 0.45; } }
 .shadow-miss { color: inherit; background: color-mix(in srgb, var(--usva-danger) 16%, transparent); border-radius: 3px; padding-inline: 1px; }
 .text-danger-ink { color: var(--usva-danger); }
+
+.spoken-word {
+  opacity: 0.18;
+  filter: blur(3px);
+  transition: opacity 360ms var(--usva-ease-soft), filter 360ms var(--usva-ease-soft);
+}
+.spoken-word[data-said] { opacity: 1; filter: blur(0); }
+
+.room-fade { animation: room-fade 900ms var(--usva-ease-soft) both; }
+@keyframes room-fade { from { opacity: 0; } }
+
+.mask-fade-top {
+  mask-image: linear-gradient(to bottom, transparent, #000 2.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 2.5rem);
+}
+
+.talk-ring { position: relative; display: inline-grid; border-radius: 999px; --level: 0; }
+.talk-ring::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow: 0 0 0 calc(3px + var(--level) * 18px) color-mix(in srgb, var(--usva-accent) 26%, transparent);
+  opacity: 0;
+  transition: opacity var(--usva-duration-base) var(--usva-ease-soft);
+}
+.talk-ring[data-recording]::before { opacity: 1; }
+.talk-button { color: var(--usva-on-accent); transition-property: background-color, scale; transition-duration: var(--usva-duration-base); }
+.talk-button:active { scale: 0.96; }
+
+.stage-presence {
+  width: var(--stage);
+  height: var(--stage);
+  transition: width 650ms cubic-bezier(0.16, 0.84, 0.24, 1), height 650ms cubic-bezier(0.16, 0.84, 0.24, 1), opacity 650ms cubic-bezier(0.16, 0.84, 0.24, 1);
+}
+.stage-presence canvas { width: 100% !important; height: 100% !important; }
+.talk-button svg { width: 2rem; height: 2rem; }
+.stage-presence[data-yielded] { width: calc(var(--stage) * var(--yielded)); height: calc(var(--stage) * var(--yielded)); opacity: 0.72; }
+
+.size-ease { transition: font-size 450ms cubic-bezier(0.16, 0.84, 0.24, 1), line-height 450ms cubic-bezier(0.16, 0.84, 0.24, 1); }
+
+.draft p:first-child { transition: color var(--usva-duration-base) var(--usva-ease-soft); }
+.draft[data-recording] p:first-child { color: var(--usva-ink); }
+
+.listen-button { position: relative; }
+.listen-button::before { content: ''; position: absolute; inset: -6px; border-radius: 999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spoken-word { transition: none; filter: none; }
+  .room-fade { animation: none; }
+  .stage-presence, .size-ease, .talk-ring::before { transition: none; }
+}
 .text-success-ink { color: var(--usva-success); }
 mark.case-mark.spoken-mark { background: color-mix(in srgb, var(--case, var(--usva-accent)) 14%, transparent); }
 

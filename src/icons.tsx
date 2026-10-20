@@ -83,6 +83,21 @@ export const TalkIcon = () => (
   </Icon>
 )
 
+export const SettingsIcon = () => (
+  <Icon>
+    <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+    <circle cx="15" cy="7" r="2" />
+    <circle cx="9" cy="17" r="2" />
+  </Icon>
+)
+
+export const AgainIcon = () => (
+  <Icon>
+    <path d="M4.5 12a7.5 7.5 0 101.8-4.9" />
+    <path d="M4 4.5v3.5h3.5" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M6 6l12 12M18 6L6 18" />

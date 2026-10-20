@@ -45,6 +45,7 @@ export const useSpeed = () =>
 let current: Current | null = null
 let context: AudioContext | null = null
 let source: AudioBufferSourceNode | null = null
+let sourceClock = { start: 0, duration: 0 }
 let element: PitchAudio | null = null
 let output: { node: AnalyserNode; level: () => number } | null = null
 let elementUrl = ''
@@ -150,6 +151,12 @@ export function primeAudio() {
   stretchElement(audioContext())
 }
 
+export function playbackProgress() {
+  if (source && context && sourceClock.duration) return Math.min(1, (context.currentTime - sourceClock.start) / sourceClock.duration)
+  if (element && !element.paused && element.duration) return Math.min(1, element.currentTime / element.duration)
+  return 0
+}
+
 export function stop() {
   request++
   source?.stop()
@@ -166,6 +173,7 @@ async function playFast(ctx: AudioContext, data: ArrayBuffer, id: number) {
   node.connect(outputNode(ctx))
   node.onended = () => source === node && stop()
   source = node
+  sourceClock = { start: ctx.currentTime, duration: buffer.duration }
   node.start()
   return true
 }

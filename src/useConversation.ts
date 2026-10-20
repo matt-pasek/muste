@@ -15,6 +15,8 @@ export type Phase = 'idle' | 'opening' | 'recording' | 'thinking' | 'speaking'
 
 const HISTORY = 30
 
+export const replySlot = (n: number) => `reply-${n}`
+
 const toLine = (e: Entry): ConverseLine =>
   e.role === 'partner' ? { role: 'partner', text: stripTags(e.text) } : { role: 'learner', text: e.understood || e.heard }
 
@@ -173,5 +175,10 @@ export function useConversation(page: () => string, register: Register) {
     [],
   )
 
-  return { phase, entries, scene, notice, open, close, talk, send, cancel, level }
+  const replay = useCallback(() => {
+    const line = history.current.findLast((e) => e.role === 'partner')
+    if (line?.role === 'partner') void say(line.text)
+  }, [say])
+
+  return { phase, entries, scene, notice, open, close, talk, send, cancel, level, replay }
 }

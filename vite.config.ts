@@ -126,7 +126,7 @@ const pwa = VitePWA({
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), tailwindcss(), basicSsl(), devApi(env.ANTHROPIC_API_KEY, { apiKey: env.ELEVENLABS_API_KEY, voiceId: env.ELEVENLABS_VOICE_ID }, restRun(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_AI_TOKEN)), pwa],
+    plugins: [react(), tailwindcss(), env.MUSTE_HTTP !== '1' && basicSsl(),devApi(env.ANTHROPIC_API_KEY, { apiKey: env.ELEVENLABS_API_KEY, voiceId: env.ELEVENLABS_VOICE_ID }, restRun(env.CLOUDFLARE_ACCOUNT_ID, env.CLOUDFLARE_AI_TOKEN)), pwa],
     server: { host: true },
   }
 })
