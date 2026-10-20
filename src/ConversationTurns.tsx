@@ -16,7 +16,6 @@ function useVariants() {
 }
 
 const settle = { duration: 0.6, ease: HEAVE }
-const slide = { layout: { duration: 0.55, ease: HEAVE } }
 
 function Speaker({ children, tone }: { children: string; tone: 'accent' | 'muted' }) {
   return <p className={`font-mono text-xs tracking-wide ${tone === 'accent' ? 'text-accent' : 'text-muted'}`}>{children}</p>
@@ -68,9 +67,9 @@ export function SceneDirection({ scene }: { scene: string }) {
   )
 }
 
-type TurnProps = { entry: Entry; latest: boolean; speaking: boolean; faded: boolean; slot?: string }
+type TurnProps = { entry: Entry; latest: boolean; speaking: boolean; faded: boolean }
 
-export function Turn({ entry, latest, speaking, faded, slot }: TurnProps) {
+export function Turn({ entry, latest, speaking, faded }: TurnProps) {
   const variants = useVariants()
   const item = { variants, transition: settle }
   const fade = `transition-opacity duration-slow ${faded ? 'opacity-50' : ''}`
@@ -87,13 +86,9 @@ export function Turn({ entry, latest, speaking, faded, slot }: TurnProps) {
 
   const understood = entry.understood && normal(entry.understood) !== normal(entry.heard) ? entry.understood : ''
   return (
-    <motion.li
-      layoutId={slot}
-      transition={slide}
-      className={`flex flex-col gap-1.5 pl-6 sm:pl-12 ${fade}`}
-    >
-      <Speaker tone="muted">you</Speaker>
-      <p className="text-lg text-pretty text-ink">“{entry.heard}”</p>
+    <motion.li initial="hidden" animate="shown" transition={{ staggerChildren: 0.08 }} className={`flex flex-col gap-1.5 pl-6 sm:pl-12 ${fade}`}>
+      <motion.div {...item}><Speaker tone="muted">you</Speaker></motion.div>
+      <motion.p {...item} className="text-lg text-pretty text-ink">“{entry.heard}”</motion.p>
       <motion.div initial="hidden" animate="shown" transition={{ staggerChildren: 0.08, delayChildren: 0.25 }} className="flex flex-col gap-1.5">
         {understood && (
           <motion.p {...item} className="text-sm text-muted">
@@ -122,16 +117,15 @@ export function Turn({ entry, latest, speaking, faded, slot }: TurnProps) {
   )
 }
 
-export function Draft({ suggestion, recording, slot }: { suggestion: Suggestion; recording: boolean; slot: string }) {
+export function Draft({ suggestion, recording }: { suggestion: Suggestion; recording: boolean }) {
   const variants = useVariants()
   return (
     <motion.li
-      layoutId={slot}
       initial="hidden"
       animate="shown"
       exit="gone"
       variants={variants}
-      transition={{ ...settle, ...slide }}
+      transition={{ duration: 0.3, ease: HEAVE }}
       className="draft flex flex-col gap-1 pl-6 sm:pl-12"
       data-recording={recording || undefined}
     >

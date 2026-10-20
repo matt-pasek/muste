@@ -15,8 +15,6 @@ export type Phase = 'idle' | 'opening' | 'recording' | 'thinking' | 'speaking'
 
 const HISTORY = 30
 
-export const replySlot = (n: number) => `reply-${n}`
-
 const toLine = (e: Entry): ConverseLine =>
   e.role === 'partner' ? { role: 'partner', text: stripTags(e.text) } : { role: 'learner', text: e.understood || e.heard }
 

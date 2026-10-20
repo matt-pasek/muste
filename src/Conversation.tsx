@@ -1,13 +1,13 @@
 import { Button } from '@usva-ui/react/primitives/button'
 import { Callout } from '@usva-ui/react/primitives/callout'
 import { Dialog } from '@usva-ui/react/primitives/dialog'
-import { AnimatePresence, LayoutGroup, useReducedMotion } from 'motion/react'
+import { AnimatePresence, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Controls } from './ConversationControls'
 import { ConversationSettings } from './ConversationSettings'
 import { Draft, Pending, SceneDirection, Turn } from './ConversationTurns'
 import { CloseIcon } from './icons'
-import { replySlot, type Chat, type Phase } from './useConversation'
+import type { Chat, Phase } from './useConversation'
 import type { Register } from './useRegister'
 import { Virva } from './virva/virva'
 import type { VirvaState } from './virva/virva-geometry'
@@ -79,15 +79,17 @@ function Room({ chat, register, onRegister }: SessionProps) {
   const last = chat.entries.at(-1)
   const busy = chat.phase === 'opening' || chat.phase === 'thinking'
   const replies = chat.entries.filter((e) => e.role === 'learner').length
-  const draft = last?.role === 'partner' && last.suggestion.fi && chat.phase !== 'speaking' && chat.phase !== 'opening' ? last.suggestion : undefined
-  const slots = chat.entries.map((e, i) => (e.role === 'learner' ? replySlot(chat.entries.slice(0, i).filter((x) => x.role === 'learner').length) : undefined))
+  const draft = last?.role === 'partner' && last.suggestion.fi && (chat.phase === 'idle' || chat.phase === 'recording') ? last.suggestion : undefined
+  const size = useStageSize()
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [chat.entries.length, chat.phase])
 
   return (
-    <div className="grid h-full grid-rows-[auto_minmax(0,1fr)_fit-content(62%)_auto] landscape:lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] landscape:lg:grid-rows-[auto_minmax(0,1fr)_auto]">
+    <div
+      style={{ '--stage-row': `${size + 16}px` } as CSSProperties}
+      className="grid h-full grid-rows-[auto_minmax(var(--stage-row),1fr)_minmax(0,max-content)_auto] landscape:lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] landscape:lg:grid-rows-[auto_minmax(0,1fr)_auto]">
       <header className="safe-top flex items-center justify-between gap-4 px-5 pb-1 sm:px-8 landscape:lg:col-span-2">
         <Dialog.Title className="text-lg font-semibold text-ink">Aino</Dialog.Title>
         <div className="flex items-center gap-1">
@@ -98,10 +100,9 @@ function Room({ chat, register, onRegister }: SessionProps) {
         </div>
       </header>
 
-      <Stage phase={chat.phase} settled={settled} level={chat.level} />
+      <Stage phase={chat.phase} settled={settled} level={chat.level} size={size} />
 
       <div className="mask-fade-top min-h-0 overflow-y-auto overscroll-contain select-text landscape:lg:col-start-2 landscape:lg:row-start-2">
-        <LayoutGroup>
           <ol className="mx-auto flex min-h-full w-full max-w-2xl flex-col justify-end gap-7 px-5 pt-10 pb-6 sm:px-8">
             {chat.scene && <SceneDirection scene={chat.scene} />}
             {chat.entries.map((entry, i) => (
@@ -111,16 +112,14 @@ function Room({ chat, register, onRegister }: SessionProps) {
                 latest={i === chat.entries.length - 1}
                 speaking={chat.phase === 'speaking' && i === chat.entries.length - 1}
                 faded={i < chat.entries.length - RECENT}
-                slot={slots[i]}
               />
             ))}
-            <AnimatePresence mode="popLayout">
-              {draft && <Draft key={replySlot(replies)} slot={replySlot(replies)} suggestion={draft} recording={chat.phase === 'recording'} />}
+            <AnimatePresence initial={false}>
+              {draft && <Draft key={`draft-${replies}`} suggestion={draft} recording={chat.phase === 'recording'} />}
               {busy && <Pending key="pending" />}
             </AnimatePresence>
             <div ref={bottom} />
           </ol>
-        </LayoutGroup>
       </div>
 
       <footer className="safe-bottom flex flex-col items-center gap-4 px-5 pt-3 landscape:lg:col-start-2 landscape:lg:row-start-3">
@@ -160,8 +159,7 @@ function useGlow(phase: Phase, level: () => number) {
   return glow
 }
 
-function Stage({ phase, settled, level }: { phase: Phase; settled: boolean; level: () => number }) {
-  const size = useStageSize()
+function Stage({ phase, settled, level, size }: { phase: Phase; settled: boolean; level: () => number; size: number }) {
   const [value, setValue] = useState(0)
   const yielded = phase === 'idle' || phase === 'recording'
   const glow = useGlow(phase, level)
