@@ -45,6 +45,7 @@ export function Sentence({ fi, spoken, en, words, register, large = false }: Sen
       <p key={showSpoken ? 'puhe' : 'kirja'} className="enter font-medium">
         {showSpoken ? <Highlighted text={spoken} words={words} written={fi} /> : <Highlighted text={fi} words={words} />}
         <ListenButton text={target} className="ml-1" />
+        <ListenButton text={target} slow />
         <ShadowButton state={practice.state} onToggle={practice.toggle} />
       </p>
       {showSpoken && <p className="text-sm text-muted">{fi}</p>}
