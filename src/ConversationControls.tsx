@@ -72,7 +72,7 @@ export function Controls({ chat, hints, onHints }: ControlsProps) {
             iconOnly
             disabled={busy}
             onClick={() => void (recording ? chat.send() : chat.talk())}
-            aria-label={recording ? 'Stop and send' : 'Talk to Aino'}
+            aria-label={recording ? 'Stop and send' : 'Talk to Jouni'}
             className="talk-button size-20"
           >
             <TalkIconState phase={chat.phase} />

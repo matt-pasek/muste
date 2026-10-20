@@ -23,10 +23,10 @@ const VIRVA_STATE: Record<Phase, VirvaState> = {
 
 const STATUS: Record<Phase, string> = {
   idle: 'Your turn',
-  opening: 'Aino is setting the scene',
+  opening: 'Jouni is setting the scene',
   recording: 'Listening to you',
-  thinking: 'Aino is thinking',
-  speaking: 'Aino is speaking',
+  thinking: 'Jouni is thinking',
+  speaking: 'Jouni is speaking',
 }
 
 const SETTLE_MS = 450
@@ -93,7 +93,7 @@ function Room({ chat, register, onRegister }: SessionProps) {
       style={{ '--stage-row': `${size + 16}px` } as CSSProperties}
       className="grid h-full grid-rows-[auto_minmax(var(--stage-row),1fr)_minmax(0,max-content)_auto] landscape:lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] landscape:lg:grid-rows-[auto_minmax(0,1fr)_auto]">
       <header className="safe-top flex items-center justify-between gap-4 px-5 pb-1 sm:px-8 landscape:lg:col-span-2">
-        <Dialog.Title className="text-lg font-semibold text-ink">Aino</Dialog.Title>
+        <Dialog.Title className="text-lg font-semibold text-ink">Jouni</Dialog.Title>
         <div className="flex items-center gap-1">
           <ConversationSettings register={register} onRegister={onRegister} onNewScene={() => void chat.open()} busy={busy} />
           <Dialog.Close render={<Button variant="ghost" shape="pill" iconOnly aria-label="Close conversation" />}>

@@ -16,7 +16,7 @@ export function ConversationSettings({ register, onRegister, onNewScene, busy }:
       <Popover.Content side="bottom" align="end" sideOffset={10} className="z-toast w-[min(320px,calc(100vw-32px))]">
         <div className="flex flex-col gap-4">
           <section className="flex flex-col gap-2">
-            <Popover.Title className="text-sm">How Aino speaks</Popover.Title>
+            <Popover.Title className="text-sm">How Jouni speaks</Popover.Title>
             <RegisterToggle value={register} onChange={onRegister} />
           </section>
           <section className="flex flex-col gap-2">

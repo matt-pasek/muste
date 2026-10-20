@@ -77,7 +77,7 @@ export function Turn({ entry, latest, speaking, faded }: TurnProps) {
   if (entry.role === 'partner') {
     return (
       <motion.li initial="hidden" animate="shown" transition={{ staggerChildren: 0.09 }} className={`flex flex-col gap-1.5 ${fade}`}>
-        <motion.div {...item}><Speaker tone="accent">Aino</Speaker></motion.div>
+        <motion.div {...item}><Speaker tone="accent">Jouni</Speaker></motion.div>
         <motion.div {...item}><SpokenLine text={entry.text} speaking={speaking} large={latest} /></motion.div>
         <motion.p {...item} className={`size-ease text-pretty text-muted ${latest ? 'text-base' : 'text-sm'}`}>{entry.en}</motion.p>
       </motion.li>
@@ -92,7 +92,7 @@ export function Turn({ entry, latest, speaking, faded }: TurnProps) {
       <motion.div initial="hidden" animate="shown" transition={{ staggerChildren: 0.08, delayChildren: 0.25 }} className="flex flex-col gap-1.5">
         {understood && (
           <motion.p {...item} className="text-sm text-muted">
-            Aino understood <span className="font-medium text-ink">{understood}</span>
+            Jouni understood <span className="font-medium text-ink">{understood}</span>
             <ListenButton text={understood} className="ml-0.5" />
           </motion.p>
         )}
@@ -145,7 +145,7 @@ export function Pending() {
   const variants = useVariants()
   return (
     <motion.li initial="hidden" animate="shown" exit="gone" variants={variants} transition={{ duration: 0.4, ease: HEAVE }} className="flex flex-col gap-2" aria-hidden>
-      <Speaker tone="accent">Aino</Speaker>
+      <Speaker tone="accent">Jouni</Speaker>
       <Skeleton className="h-7 w-4/5 rounded-lg" />
       <Skeleton className="h-7 w-3/5 rounded-lg" />
     </motion.li>

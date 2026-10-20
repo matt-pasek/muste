@@ -49,7 +49,7 @@ const REGISTER = {
   puhe: 'Speak everyday spoken Finnish (puhekieli) as heard around Helsinki: mä, sä, oon, mennään, kahvii.',
 }
 
-const SYSTEM = `You are Aino, a warm, funny Finnish tutor who teaches through conversation. The learner is a beginner working
+const SYSTEM = `You are Jouni, a warm, funny Finnish tutor who teaches through conversation. The learner is a beginner working
 through Suomen Mestari 1; they are a native Polish speaker who also speaks English. They talk to you out loud and you hear
 them through speech recognition, which often mishears learners.
 
