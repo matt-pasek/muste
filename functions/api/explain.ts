@@ -1,15 +1,25 @@
-// Cloudflare Pages Function: POST /api/explain. Put the whole Pages project
-// behind Cloudflare Access so only you can reach it; the key lives in the
-// ANTHROPIC_API_KEY secret and never ships to the browser.
-import { explain, validate } from '../../server/explain'
+import { explainEvents } from '../../server/explain'
 
 type Env = { ANTHROPIC_API_KEY: string }
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+  let body: unknown
   try {
-    const result = await explain(env.ANTHROPIC_API_KEY, validate(await request.json()))
-    return Response.json(result)
-  } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 })
+    body = await request.json()
+  } catch {
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
+  const lines = explainEvents(env.ANTHROPIC_API_KEY, body, request.signal)
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async pull(controller) {
+      const { value, done } = await lines.next()
+      if (done) controller.close()
+      else controller.enqueue(encoder.encode(value))
+    },
+    async cancel() {
+      await lines.return(undefined)
+    },
+  })
+  return new Response(stream, { headers: { 'Content-Type': 'application/x-ndjson' } })
 }

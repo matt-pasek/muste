@@ -2,10 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="muste" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#e7dcc8" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0613" />
+    <script>
+      ;(() => {
+        const dark = matchMedia('(prefers-color-scheme: dark)')
+        const apply = () => (document.documentElement.dataset.theme = dark.matches ? 'kajo' : 'savi')
+        apply()
+        dark.addEventListener('change', apply)
+      })()
+    </script>
     <title>muste</title>
   </head>
   <body>

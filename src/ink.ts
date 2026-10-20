@@ -1,11 +1,20 @@
 import { getStroke } from 'perfect-freehand'
 
-// Points are stored in PDF units (x, y, pressure) so ink survives zoom and
-// screen-size changes.
-export type Stroke = { points: [number, number, number][] }
+export type Stroke = { points: [number, number, number][]; color?: string }
+
+export const INKS = [
+  { name: 'Blue', color: '#1b3a8a' },
+  { name: 'Graphite', color: '#26262b' },
+  { name: 'Red', color: '#c0362c' },
+  { name: 'Green', color: '#2d7a3e' },
+] as const
+
+export const DEFAULT_INK = INKS[0].color
+
+export const INK_SIZE = 1.7
 
 const OPTIONS = {
-  size: 2.2,
+  size: INK_SIZE,
   thinning: 0.6,
   smoothing: 0.5,
   streamline: 0.35,
@@ -26,6 +35,7 @@ export function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke, scale:
     path.quadraticCurveTo(x0, y0, (x0 + x1) / 2, (y0 + y1) / 2)
   }
   path.closePath()
+  ctx.fillStyle = stroke.color ?? DEFAULT_INK
   ctx.fill(path)
 }
 

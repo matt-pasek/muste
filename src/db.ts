@@ -1,9 +1,12 @@
-import { createStore, get, set } from 'idb-keyval'
+import { createStore, get, keys, set } from 'idb-keyval'
+import type { DictResult } from '../server/dictionary'
 import type { Explanation } from '../server/explain'
+import type { Guide, Topic } from '../server/grammar'
+import type { AnswerKey } from './answers'
 import type { Stroke } from './ink'
+import type { LookupRequest } from './lookup'
+import type { OcrWord } from './ocr'
 
-// Everything stays in this browser's IndexedDB. The PDFs are copyrighted and
-// are never uploaded anywhere.
 const store = createStore('muste', 'kv')
 
 export type StoredPdf = { name: string; data: ArrayBuffer }
@@ -16,8 +19,45 @@ export const loadInk = (pdf: string, page: number) =>
 export const saveInk = (pdf: string, page: number, strokes: Stroke[]) =>
   set(`ink:${pdf}:${page}`, strokes, store)
 
-export const loadLastPage = (pdf: string) => get<number>(`last:${pdf}`, store)
+export async function unstretchInk(pdf: string, aspects: number[]) {
+  const flag = `inkfix1:${pdf}`
+  if (await get<boolean>(flag, store)) return
+  const prefix = `ink:${pdf}:`
+  const inkKeys = (await keys<string>(store)).filter((k) => typeof k === 'string' && k.startsWith(prefix))
+  await Promise.all(
+    inkKeys.map(async (key) => {
+      const page = Number(key.slice(prefix.length))
+      const factor = aspects[page - 1] / aspects[0]
+      const strokes = await get<Stroke[]>(key, store)
+      if (!strokes || !factor || factor === 1) return
+      const fixed = strokes.map((s) => ({ points: s.points.map(([x, y, p]) => [x, y * factor, p] as [number, number, number]) }))
+      await set(key, fixed, store)
+    }),
+  )
+  await set(flag, true, store)
+}
+
+export const loadLastPage =(pdf: string) => get<number>(`last:${pdf}`, store)
 export const saveLastPage = (pdf: string, page: number) => set(`last:${pdf}`, page, store)
 
-export const loadExplanation = (key: string) => get<Explanation>(`explain:${key}`, store)
-export const saveExplanation = (key: string, value: Explanation) => set(`explain:${key}`, value, store)
+export const loadOcr = (pdf: string, page: number) => get<OcrWord[]>(`ocr1:${pdf}:${page}`, store)
+export const saveOcr = (pdf: string, page: number, words: OcrWord[]) => set(`ocr1:${pdf}:${page}`, words, store)
+
+export const loadTextExplanation = (key: string) => get<Explanation>(`explainw1:${key}`, store)
+export const saveTextExplanation = (key: string, value: Explanation) => set(`explainw1:${key}`, value, store)
+
+export const loadAnswerKey = (pdf: string) => get<AnswerKey>(`answers1:${pdf}`, store)
+export const saveAnswerKey = (pdf: string, key: AnswerKey) => set(`answers1:${pdf}`, key, store)
+
+export const loadDict = (word: string) => get<DictResult>(`dict1:${word}`, store)
+export const saveDict = (word: string, value: DictResult) => set(`dict1:${word}`, value, store)
+
+export const loadGuide = (topic: Topic) => get<Guide>(`guide2:${topic}`, store)
+export const saveGuide = (topic: Topic, value: Guide) => set(`guide2:${topic}`, value, store)
+
+export type CachedExplanation = { req: LookupRequest; result: Explanation }
+
+export const loadExplanations = (pdf: string, page: number) =>
+  get<CachedExplanation[]>(`explain2:${pdf}:${page}`, store).then((e) => e ?? [])
+export const saveExplanations = (pdf: string, page: number, entries: CachedExplanation[]) =>
+  set(`explain2:${pdf}:${page}`, entries, store)

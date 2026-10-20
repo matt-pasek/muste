@@ -1,9 +1,0 @@
-{
-  "name": "muste",
-  "short_name": "muste",
-  "display": "standalone",
-  "start_url": "/",
-  "background_color": "#f4f1ec",
-  "theme_color": "#e05a1a",
-  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
-}
