@@ -4,6 +4,7 @@ import type { OcrWord } from './ocr'
 export const TRUSTED_CONF = 80
 const TAP_REACH = 6
 const LINE_GAP = 2.5
+const NOISE_CONF = 50
 
 const HAS_LETTER = /\p{L}{2,}/u
 const center = (b: Rect) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2 })
@@ -30,8 +31,12 @@ const sameRow = (a: Rect, b: Rect) => {
   return overlap > 0.5 * Math.min(a.h, b.h)
 }
 
+const isNoise = (w: OcrWord) => w.conf < NOISE_CONF || !(HAS_LETTER.test(w.text) || /\d/.test(w.text))
+
 export function lineOf(words: OcrWord[], word: OcrWord) {
-  const row = words.filter((w) => sameRow(w.box, word.box)).sort((a, b) => a.box.x - b.box.x)
+  const row = words
+    .filter((w) => w === word || (sameRow(w.box, word.box) && !isNoise(w)))
+    .sort((a, b) => a.box.x - b.box.x)
   const i = row.indexOf(word)
   const maxGap = LINE_GAP * word.box.h
   let start = i
