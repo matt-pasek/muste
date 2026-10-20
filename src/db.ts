@@ -55,6 +55,9 @@ export const saveDict = (word: string, value: DictResult) => set(`dict1:${word}`
 export const loadGuide = (topic: Topic) => get<Guide>(`guide2:${topic}`, store)
 export const saveGuide = (topic: Topic, value: Guide) => set(`guide2:${topic}`, value, store)
 
+export const loadSpeech = (text: string) => get<ArrayBuffer>(`tts1:${text}`, store)
+export const saveSpeech = (text: string, audio: ArrayBuffer) => set(`tts1:${text}`, audio, store)
+
 export type CachedExplanation = { req: LookupRequest; result: Explanation }
 
 export const loadExplanations = (pdf: string, page: number) =>

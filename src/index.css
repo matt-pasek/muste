@@ -199,6 +199,8 @@
   text-decoration-thickness: 1.5px;
   text-underline-offset: 4px;
 }
+.listen-button { vertical-align: middle; margin-block: -0.4em; color: var(--usva-accent); }
+.listen-button.is-error { color: var(--usva-danger); }
 mark.case-mark.spoken-mark { background: color-mix(in srgb, var(--case, var(--usva-accent)) 14%, transparent); }
 
 .gesture-toast { animation: toast 1.4s var(--usva-ease-soft) both; }

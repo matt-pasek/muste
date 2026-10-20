@@ -4,6 +4,7 @@ import { Spinner } from '@usva-ui/react/primitives/spinner'
 import type { DictEntry } from '../server/dictionary'
 import { caseClass, isCase } from './cases'
 import { lookup, tables, type Block } from './dictionary'
+import { ListenButton } from './ListenButton'
 import { useOpenReference } from './reference'
 import { useAsync } from './useAsync'
 
@@ -42,7 +43,10 @@ function Entry({ entry, first }: { entry: DictEntry; first: boolean }) {
   return (
     <article className="flex flex-col gap-6">
       <header className="enter flex flex-col items-center gap-1 text-center">
-        <Title className="text-4xl font-light tracking-tight">{entry.word}</Title>
+        <div className="flex items-center gap-1">
+          <Title className="text-4xl font-light tracking-tight">{entry.word}</Title>
+          <ListenButton text={entry.word} />
+        </div>
         <p className="text-muted italic">{entry.pos}</p>
         {entry.kotus && (
           <p className="text-sm text-muted">

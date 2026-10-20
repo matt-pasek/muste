@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react'
 import { caseClass, caseLabel, isCase } from './cases'
+import { ListenButton } from './ListenButton'
 import type { PartialExplanation } from './lookup'
 import { useOpenReference } from './reference'
 import type { Register } from './useRegister'
@@ -39,6 +40,7 @@ export function Sentence({ fi, spoken, en, words, register, large = false }: Sen
     <>
       <p key={showSpoken ? 'puhe' : 'kirja'} className="enter font-medium">
         {showSpoken ? <Highlighted text={spoken} words={words} written={fi} /> : <Highlighted text={fi} words={words} />}
+        <ListenButton text={showSpoken ? spoken : fi} className="ml-1" />
       </p>
       {showSpoken && <p className="text-sm text-muted">{fi}</p>}
       {en && <p className={large ? 'mt-0.5 text-muted' : 'text-sm text-muted'}>{en}</p>}
@@ -68,13 +70,17 @@ export function WordDetail({ word, large = false }: { word: PartialWord; large?:
   return (
     <div className="flex flex-col gap-1.5">
       <p className="flex flex-wrap items-baseline gap-x-2">
-        <span className={large ? 'text-2xl font-semibold' : 'font-semibold'}>{word.form}</span>
+        <span className={large ? 'text-2xl font-semibold' : 'font-semibold'}>
+          {word.form}
+          <ListenButton text={word.form} className="ml-0.5" />
+        </span>
         {word.gloss && <span className={large ? 'text-lg text-muted' : 'text-muted'}>{word.gloss}</span>}
       </p>
       {meta && <p className="enter font-mono text-xs text-muted">{meta}</p>}
       {word.spoken && word.form && normal(word.spoken) !== normal(word.form) && (
         <p className="enter text-sm text-muted">
           spoken: <span className="spoken-mark font-medium text-ink">{word.spoken}</span>
+          <ListenButton text={word.spoken} className="ml-0.5" />
         </p>
       )}
       {word.why && <p className="enter text-sm leading-relaxed text-ink">{word.why}</p>}

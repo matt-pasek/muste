@@ -8,6 +8,7 @@ import { parseAnswerPage, validateAnswers } from './server/answers.ts'
 import { lookupWord, validateWord } from './server/dictionary.ts'
 import { explainEvents } from './server/explain.ts'
 import { grammarGuide, validateTopic } from './server/grammar.ts'
+import { synthesize, validateSpeech, type TtsConfig } from './server/tts.ts'
 
 type Handler = (apiKey: string, body: unknown, signal: AbortSignal, res: ServerResponse) => Promise<void>
 
@@ -45,7 +46,21 @@ async function dictRoute(req: IncomingMessage, res: ServerResponse) {
   }
 }
 
-function devApi(apiKey: string | undefined): Plugin {
+const ttsRoute = (config: TtsConfig) => async (req: IncomingMessage, res: ServerResponse) => {
+  const ctrl = new AbortController()
+  res.on('close', () => !res.writableEnded && ctrl.abort())
+  try {
+    let body = ''
+    for await (const chunk of req) body += chunk
+    const audio = await synthesize(config, validateSpeech(JSON.parse(body)), ctrl.signal)
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.end(Buffer.from(audio))
+  } catch (err) {
+    if (!ctrl.signal.aborted) sendJson(res, 500, { error: err instanceof Error ? err.message : String(err) })
+  }
+}
+
+function devApi(apiKey: string | undefined, tts: TtsConfig): Plugin {
   const route = (handler: Handler) => async (req: IncomingMessage, res: ServerResponse) => {
     if (!apiKey) return sendJson(res, 500, { error: 'Set ANTHROPIC_API_KEY in .env.local' })
     const ctrl = new AbortController()
@@ -67,6 +82,7 @@ function devApi(apiKey: string | undefined): Plugin {
       server.middlewares.use('/api/answers', route(answersHandler))
       server.middlewares.use('/api/grammar', route(grammarHandler))
       server.middlewares.use('/api/dict', dictRoute)
+      server.middlewares.use('/api/tts', ttsRoute(tts))
     },
   }
 }
@@ -105,7 +121,7 @@ const pwa = VitePWA({
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
-    plugins: [react(), tailwindcss(), basicSsl(), devApi(env.ANTHROPIC_API_KEY), pwa],
+    plugins: [react(), tailwindcss(), basicSsl(), devApi(env.ANTHROPIC_API_KEY, { apiKey: env.ELEVENLABS_API_KEY, voiceId: env.ELEVENLABS_VOICE_ID }), pwa],
     server: { host: true },
   }
 })

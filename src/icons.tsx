@@ -48,6 +48,19 @@ export const BookIcon = () => (
   </Icon>
 )
 
+export const SpeakerIcon = () => (
+  <Icon>
+    <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" />
+    <path d="M15.5 9a4 4 0 010 6M18 6.5a7.5 7.5 0 010 11" />
+  </Icon>
+)
+
+export const StopIcon = () => (
+  <Icon>
+    <rect x="7" y="7" width="10" height="10" rx="2" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M6 6l12 12M18 6L6 18" />

@@ -1,12 +1,13 @@
 import { Button } from '@usva-ui/react/primitives/button'
 import { Callout } from '@usva-ui/react/primitives/callout'
 import { SulaLoader } from '@usva-ui/react/sula/sula-loader'
-import { useMemo, type CSSProperties } from 'react'
+import { useEffect, useMemo, type CSSProperties } from 'react'
 import type { AnswerExercise } from '../server/answers'
 import type { Explanation } from '../server/explain'
 import { AnswersReveal } from './AnswersReveal'
 import { CloseIcon } from './icons'
 import { RegisterToggle } from './RegisterToggle'
+import { SpeechReady, stop } from './speech'
 import { useRegister, type Register } from './useRegister'
 import { Sentence, WordChip, WordDetail } from './WordViews'
 import type { Anchor, PartialExplanation, PartialRegion } from './lookup'
@@ -43,6 +44,7 @@ type Props = { state: SheetState; anchor: Anchor; answers: AnswerExercise[]; onC
 export function ExplainPanel({ state, anchor, answers, onClose }: Props) {
   const style = useMemo(() => placement(anchor), [anchor])
   const [register, setRegister] = useRegister()
+  useEffect(() => stop, [])
 
   return (
     <aside
@@ -63,12 +65,14 @@ export function ExplainPanel({ state, anchor, answers, onClose }: Props) {
       >
         <CloseIcon />
       </Button>
-      <div className="overflow-y-auto overscroll-contain p-5 pr-12">
-        {state.status === 'loading' && <Reading />}
-        {state.status === 'error' && <Callout tone="danger" title="Couldn't explain that">{state.message}</Callout>}
-        {(state.status === 'streaming' || state.status === 'done') && <Body result={state.result} register={register} onRegister={setRegister} />}
-        {state.status === 'done' && answers.length > 0 && <AnswersReveal key={answers.map((a) => a.number).join()} exercises={answers} />}
-      </div>
+      <SpeechReady value={state.status === 'done'}>
+        <div className="overflow-y-auto overscroll-contain p-5 pr-12">
+          {state.status === 'loading' && <Reading />}
+          {state.status === 'error' && <Callout tone="danger" title="Couldn't explain that">{state.message}</Callout>}
+          {(state.status === 'streaming' || state.status === 'done') && <Body result={state.result} register={register} onRegister={setRegister} />}
+          {state.status === 'done' && answers.length > 0 && <AnswersReveal key={answers.map((a) => a.number).join()} exercises={answers} />}
+        </div>
+      </SpeechReady>
     </aside>
   )
 }
