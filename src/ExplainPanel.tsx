@@ -7,7 +7,8 @@ import type { Explanation } from '../server/explain'
 import { AnswersReveal } from './AnswersReveal'
 import { CloseIcon } from './icons'
 import { RegisterToggle } from './RegisterToggle'
-import { SpeechReady, stop } from './speech'
+import { SpeechReady, stop, useSpeechReady } from './speech'
+import { SpeedToggle } from './SpeedToggle'
 import { useRegister, type Register } from './useRegister'
 import { Sentence, WordChip, WordDetail } from './WordViews'
 import type { Anchor, PartialExplanation, PartialRegion } from './lookup'
@@ -97,7 +98,7 @@ function Body({ result, register, onRegister }: { result: PartialExplanation } &
         {result.word ? <WordDetail word={result.word} large /> : <Reading />}
         {result.sentence && (
           <section className="enter flex flex-col gap-2 border-t border-border pt-3">
-            {differs(result.sentence, result.sentence_spoken) && <RegisterToggle value={register} onChange={onRegister} />}
+            <Controls showRegister={differs(result.sentence, result.sentence_spoken)} register={register} onRegister={onRegister} />
             <div>
               <Sentence fi={result.sentence} spoken={result.sentence_spoken} en={result.sentence_en} words={[result.word]} register={register} large />
             </div>
@@ -107,6 +108,17 @@ function Body({ result, register, onRegister }: { result: PartialExplanation } &
     )
   }
   return <RegionBody result={result as PartialRegion} register={register} onRegister={onRegister} />
+}
+
+function Controls({ showRegister, register, onRegister }: { showRegister: boolean } & RegisterProps) {
+  const ready = useSpeechReady()
+  if (!showRegister && !ready) return null
+  return (
+    <div className="enter flex flex-wrap items-center justify-between gap-2">
+      {showRegister ? <RegisterToggle value={register} onChange={onRegister} /> : <span />}
+      {ready && <SpeedToggle />}
+    </div>
+  )
 }
 
 function Eyebrow({ children }: { children: string }) {
@@ -125,7 +137,7 @@ function RegionBody({ result, register, onRegister }: { result: PartialRegion } 
       </header>
       {!!result.sentences?.length && (
         <section className="flex flex-col gap-2.5">
-          {result.sentences.some((s) => differs(s?.fi, s?.spoken)) && <RegisterToggle value={register} onChange={onRegister} />}
+          <Controls showRegister={result.sentences.some((s) => differs(s?.fi, s?.spoken))} register={register} onRegister={onRegister} />
           <ol className="flex flex-col gap-2.5">
             {result.sentences.map((s, i) => s?.fi && (
               <li key={i} className="enter">
