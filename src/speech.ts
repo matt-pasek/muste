@@ -52,7 +52,8 @@ let request = 0
 const listeners = new Set<() => void>()
 const inflight = new Map<string, Promise<ArrayBuffer>>()
 
-export const speechKey = (text: string, slow = false) => (slow ? `slow:${text}` : text)
+const audioKey = (text: string, expressive: boolean) => (expressive ? `x:${text}` : text)
+export const speechKey = (text: string, slow = false, expressive = false) => `${slow ? 'slow:' : ''}${audioKey(text, expressive)}`
 
 const publish = (next: Current | null) => {
   current = next
@@ -64,26 +65,28 @@ const subscribe = (listener: () => void) => {
   return () => listeners.delete(listener)
 }
 
-async function fetchSpeech(text: string): Promise<ArrayBuffer> {
-  const cached = await loadSpeech(text)
+async function fetchSpeech(text: string, expressive: boolean): Promise<ArrayBuffer> {
+  const key = audioKey(text, expressive)
+  const cached = await loadSpeech(key)
   if (cached) return cached
   const res = await fetch('/api/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, expressive }),
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error ?? `HTTP ${res.status}`)
   }
   const audio = await res.arrayBuffer()
-  await saveSpeech(text, audio)
+  await saveSpeech(key, audio)
   return audio
 }
 
-function audio(text: string) {
-  const pending = inflight.get(text) ?? fetchSpeech(text).finally(() => inflight.delete(text))
-  inflight.set(text, pending)
+function audio(text: string, expressive: boolean) {
+  const key = audioKey(text, expressive)
+  const pending = inflight.get(key) ?? fetchSpeech(text, expressive).finally(() => inflight.delete(key))
+  inflight.set(key, pending)
   return pending
 }
 
@@ -178,16 +181,16 @@ async function playStretched(player: PitchAudio, data: ArrayBuffer, rate: number
   return id === request
 }
 
-export async function speak(text: string, slow = false) {
+export async function speak(text: string, slow = false, expressive = false) {
   stop()
   const id = request
-  const key = speechKey(text, slow)
+  const key = speechKey(text, slow, expressive)
   const ctx = audioContext()
   const rate = slow ? SLOW_RATE : speed
   const player = rate === 1 ? null : stretchElement(ctx)
   publish({ key, status: 'loading' })
   try {
-    const data = await audio(text)
+    const data = await audio(text, expressive)
     const started = player ? await playStretched(player, data, rate, id) : await playFast(ctx, data, id)
     if (started) publish({ key, status: 'playing' })
   } catch (err) {
@@ -195,9 +198,9 @@ export async function speak(text: string, slow = false) {
   }
 }
 
-export async function speakUntilDone(text: string) {
-  const key = speechKey(text)
-  await speak(text)
+export async function speakUntilDone(text: string, expressive = false) {
+  const key = speechKey(text, false, expressive)
+  await speak(text, false, expressive)
   if (current?.key !== key || current.status !== 'playing') {
     if (current?.key === key && current.status === 'error') throw new Error(current.message)
     return

@@ -2,18 +2,23 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ConverseLine, ConverseTurn } from '../server/converse'
 import { startRecording, type Recording } from './recorder'
 import { outputLevel, primeAudio, speakUntilDone, stop as stopSpeech } from './speech'
+import { stripTags } from './tags'
 import type { Register } from './useRegister'
 
 export type Correction = ConverseTurn['corrections'][number]
+export type Suggestion = ConverseTurn['suggestion']
 export type Entry =
-  | { role: 'partner'; text: string; en: string }
-  | { role: 'learner'; heard: string; corrections: Correction[] }
+  | { role: 'partner'; text: string; en: string; suggestion: Suggestion }
+  | { role: 'learner'; heard: string; understood: string; corrections: Correction[] }
 
 export type Phase = 'idle' | 'opening' | 'recording' | 'thinking' | 'speaking'
 
 const HISTORY = 30
 
-const toLine = (e: Entry): ConverseLine => (e.role === 'partner' ? { role: 'partner', text: e.text } : { role: 'learner', text: e.heard })
+const toLine = (e: Entry): ConverseLine =>
+  e.role === 'partner' ? { role: 'partner', text: stripTags(e.text) } : { role: 'learner', text: e.understood || e.heard }
+
+const lastHint = (entries: Entry[]) => entries.findLast((e) => e.role === 'partner')?.suggestion.fi
 
 async function post(body: object, signal: AbortSignal): Promise<ConverseTurn | { heard: '' }> {
   const res = await fetch('/api/converse', {
@@ -49,7 +54,7 @@ export function useConversation(page: () => string, register: Register) {
   const say = useCallback(async (text: string) => {
     setPhase('speaking')
     try {
-      await speakUntilDone(text)
+      await speakUntilDone(text, true)
     } catch (err) {
       setNotice(`Couldn't play the reply: ${message(err)}`)
     }
@@ -61,7 +66,14 @@ export function useConversation(page: () => string, register: Register) {
       inflight.current?.abort()
       const ctrl = new AbortController()
       inflight.current = ctrl
-      const turn = await post({ audio, history: history.current.slice(-HISTORY).map(toLine), page: page() || undefined, register }, ctrl.signal)
+      const body = {
+        audio,
+        history: history.current.slice(-HISTORY).map(toLine),
+        hint: lastHint(history.current),
+        page: page() || undefined,
+        register,
+      }
+      const turn = await post(body, ctrl.signal)
       return ctrl.signal.aborted ? null : turn
     },
     [page, register],
@@ -72,7 +84,7 @@ export function useConversation(page: () => string, register: Register) {
       const turn = await request()
       if (!turn || !('reply' in turn)) return setPhase('idle')
       setScene(turn.scene)
-      append([{ role: 'partner', text: turn.reply, en: turn.reply_en }])
+      append([{ role: 'partner', text: turn.reply, en: turn.reply_en, suggestion: turn.suggestion }])
       await say(turn.reply)
     } catch (err) {
       if (isAbort(err)) return
@@ -105,8 +117,8 @@ export function useConversation(page: () => string, register: Register) {
         return setPhase('idle')
       }
       append([
-        { role: 'learner', heard: turn.heard, corrections: turn.corrections },
-        { role: 'partner', text: turn.reply, en: turn.reply_en },
+        { role: 'learner', heard: turn.heard, understood: turn.understood, corrections: turn.corrections },
+        { role: 'partner', text: turn.reply, en: turn.reply_en, suggestion: turn.suggestion },
       ])
       await say(turn.reply)
     } catch (err) {

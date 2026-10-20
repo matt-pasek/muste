@@ -11,8 +11,9 @@ const Output = z.object({
 
 export type Transcript = { text: string; words: { word: string; start: number; end: number }[] }
 
-export async function transcribe(run: AiRun, audio: string, signal?: AbortSignal): Promise<Transcript> {
-  const out = Output.parse(await run(MODEL, { audio, language: 'fi', task: 'transcribe' }, signal))
+export async function transcribe(run: AiRun, audio: string, signal?: AbortSignal, prompt?: string): Promise<Transcript> {
+  const input = { audio, language: 'fi', task: 'transcribe', ...(prompt && { initial_prompt: prompt }) }
+  const out = Output.parse(await run(MODEL, input, signal))
   return { text: out.text.trim(), words: out.words ?? [] }
 }
 

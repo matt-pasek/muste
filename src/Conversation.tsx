@@ -6,6 +6,7 @@ import { CloseIcon, MicIcon, StopIcon } from './icons'
 import { ListenButton } from './ListenButton'
 import { RegisterToggle } from './RegisterToggle'
 import { SpeedToggle } from './SpeedToggle'
+import { stripTags } from './tags'
 import type { Chat, Entry, Phase } from './useConversation'
 import type { Register } from './useRegister'
 import { Virva } from './virva/virva'
@@ -68,7 +69,7 @@ function Session({ chat, register, onRegister }: SessionProps) {
       </header>
       <LiveVirva phase={chat.phase} level={chat.level} />
       <ol className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-6 pb-4 select-text sm:px-8">
-        {chat.entries.map((entry, i) => <Line key={i} entry={entry} />)}
+        {chat.entries.map((entry, i) => <Line key={i} entry={entry} latest={i === chat.entries.length - 1} />)}
         <div ref={bottom} />
       </ol>
       <footer className="safe-bottom flex flex-col items-center gap-2 border-t border-border px-6 pt-4">
@@ -110,22 +111,41 @@ function LiveVirva({ phase, level }: { phase: Phase; level: () => number }) {
   )
 }
 
-function Line({ entry }: { entry: Entry }) {
+function Line({ entry, latest }: { entry: Entry; latest: boolean }) {
   if (entry.role === 'partner') {
     return (
-      <li className="enter flex max-w-[85%] flex-col gap-0.5 self-start rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3">
-        <p className="font-medium">
-          {entry.text}
-          <ListenButton text={entry.text} className="ml-1" />
-          <ListenButton text={entry.text} slow />
-        </p>
-        <p className="text-sm text-muted">{entry.en}</p>
+      <li className="enter flex max-w-[85%] flex-col gap-2 self-start">
+        <div className="flex flex-col gap-0.5 rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3">
+          <p className="font-medium">
+            {stripTags(entry.text)}
+            <ListenButton text={entry.text} expressive className="ml-1" />
+            <ListenButton text={entry.text} slow expressive />
+          </p>
+          <p className="text-sm text-muted">{entry.en}</p>
+        </div>
+        {latest && entry.suggestion.fi && (
+          <div className="enter flex flex-col gap-0.5 rounded-xl border border-dashed border-border-strong px-3 py-2 text-sm">
+            <p className="font-mono text-xs tracking-wider text-accent uppercase">You could say</p>
+            <p className="font-medium">
+              {entry.suggestion.fi}
+              <ListenButton text={entry.suggestion.fi} className="ml-0.5" />
+              <ListenButton text={entry.suggestion.fi} slow />
+            </p>
+            <p className="text-muted">{entry.suggestion.en}</p>
+          </div>
+        )}
       </li>
     )
   }
   return (
     <li className="enter flex max-w-[85%] flex-col items-end gap-1.5 self-end">
       <p className="rounded-2xl rounded-br-md bg-accent-tint px-4 py-3 text-on-tint">{entry.heard}</p>
+      {entry.understood && normal(entry.understood) !== normal(entry.heard) && (
+        <p className="text-sm text-muted">
+          understood as <span className="font-medium text-ink">{entry.understood}</span>
+          <ListenButton text={entry.understood} className="ml-0.5" />
+        </p>
+      )}
       {entry.corrections.map((c, i) => (
         <div key={i} className="flex flex-col gap-0.5 rounded-xl border border-border px-3 py-2 text-sm">
           <p>
@@ -140,6 +160,8 @@ function Line({ entry }: { entry: Entry }) {
     </li>
   )
 }
+
+const normal = (s: string) => s.toLowerCase().replace(/[^\p{L}\s]/gu, '').replace(/\s+/g, ' ').trim()
 
 function Controls({ chat }: { chat: Chat }) {
   if (chat.phase === 'recording') {
