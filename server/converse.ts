@@ -17,7 +17,7 @@ const Reply = z.object({
   scene: z.string().describe('Only when opening: one or two English sentences setting the scene and who you are. Otherwise empty'),
   understood: z
     .string()
-    .describe('What you believe the learner meant, in correct Finnish, when the transcript is garbled or partly wrong. Empty if it was clear or when opening'),
+    .describe("The learner's own sentence rebuilt from the heard sounds, when the transcript is garbled. Keep their words and structure. Empty if it was clear or when opening"),
   reply: z
     .string()
     .describe('Your next turn in Finnish, spoken aloud, with ElevenLabs audio tags in square brackets for delivery, e.g. [laughs], [warmly], [curious]'),
@@ -31,7 +31,7 @@ const Reply = z.object({
       }),
     )
     .max(2)
-    .describe("At most two mistakes worth learning from in the learner's last turn; empty when opening or when it was fine"),
+    .describe("At most two real mistakes in the learner's rebuilt sentence; empty when opening or when their sentence was correct"),
   suggestion: z
     .object({
       fi: z.string().describe('A short, natural answer the learner could give next, at their level'),
@@ -69,9 +69,15 @@ You are a tutor as well as a partner:
 - If they seem lost, slow down: shorter sentences and an easier question.
 
 Understanding them:
-- The transcript is often garbled. Work out what they most likely meant from context, put it in "understood", and answer
-  that meaning. Only correct real language mistakes (wrong ending, wrong word, missing verb). When a heard word is a
-  different real word that suggests a length slip (tuli for tuuli), mention it gently.
+- The learner may say anything they like. The suggested answer is only a crutch; never assume they said it.
+- The transcript is often garbled. Rebuild their own sentence from the sounds that were heard, staying as close to them as
+  possible ("säisin ko kahvin" is "saisinko kahvin", not "haluan kahvia"). Put that in "understood" and answer it.
+- Judge the rebuilt sentence, not the transcript. If it is correct Finnish, there are no corrections, even when it
+  differs from what you expected. Many phrasings are right: "saisinko kahvin" (total object, -n) and "haluan kahvia"
+  (partitive) are both fine.
+- Only correct real language mistakes in the rebuilt sentence (wrong ending, wrong word, missing verb). Recognition
+  slips are not mistakes. When a heard word is a different real word that suggests a length slip (tuli for tuuli),
+  mention it gently as pronunciation.
 - Polish has no long vowels, so short aa/uu/ii/ää are common. Never correct puhekieli forms. Ignore punctuation and
   capitals. Do not repeat corrections inside the reply; the app shows them separately.`
 

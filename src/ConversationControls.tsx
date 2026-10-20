@@ -2,7 +2,7 @@ import { Button } from '@usva-ui/react/primitives/button'
 import { Spinner } from '@usva-ui/react/primitives/spinner'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
-import { AgainIcon, MicIcon, StopIcon } from './icons'
+import { AgainIcon, HintIcon, MicIcon, StopIcon } from './icons'
 import { iconSwap } from './motion'
 import type { Chat } from './useConversation'
 
@@ -49,7 +49,9 @@ function useLevelRing(chat: Chat) {
   return ring
 }
 
-export function Controls({ chat }: { chat: Chat }) {
+type ControlsProps = { chat: Chat; hints: boolean; onHints: () => void }
+
+export function Controls({ chat, hints, onHints }: ControlsProps) {
   const recording = chat.phase === 'recording'
   const busy = chat.phase === 'opening' || chat.phase === 'thinking'
   const ring = useLevelRing(chat)
@@ -79,10 +81,23 @@ export function Controls({ chat }: { chat: Chat }) {
         <span className="text-sm font-medium text-muted">{LABEL[chat.phase]}</span>
       </div>
       <div className="justify-self-start pt-4">
-        <AnimatePresence initial={false}>
-          {recording && (
-            <motion.div {...iconSwap}>
+        <AnimatePresence mode="popLayout" initial={false}>
+          {recording ? (
+            <motion.div key="cancel" {...iconSwap}>
               <Button variant="ghost" shape="pill" onClick={chat.cancel}>Cancel</Button>
+            </motion.div>
+          ) : (
+            <motion.div key="hints" {...iconSwap}>
+              <Button
+                variant="ghost"
+                shape="pill"
+                aria-pressed={hints}
+                onClick={onHints}
+                title={hints ? 'Hide what you could say' : 'Show what you could say'}
+                className="hint-toggle"
+              >
+                <HintIcon /> Hints
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>

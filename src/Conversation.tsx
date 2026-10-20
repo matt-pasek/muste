@@ -8,6 +8,7 @@ import { ConversationSettings } from './ConversationSettings'
 import { Draft, Pending, SceneDirection, Turn } from './ConversationTurns'
 import { CloseIcon } from './icons'
 import type { Chat, Phase } from './useConversation'
+import { useHints } from './useHints'
 import type { Register } from './useRegister'
 import { Virva } from './virva/virva'
 import type { VirvaState } from './virva/virva-geometry'
@@ -74,12 +75,13 @@ function useStageSize() {
 }
 
 function Room({ chat, register, onRegister }: SessionProps) {
+  const [hints, toggleHints] = useHints()
   const settled = useSettled()
   const bottom = useRef<HTMLDivElement>(null)
   const last = chat.entries.at(-1)
   const busy = chat.phase === 'opening' || chat.phase === 'thinking'
   const replies = chat.entries.filter((e) => e.role === 'learner').length
-  const draft = last?.role === 'partner' && last.suggestion.fi && (chat.phase === 'idle' || chat.phase === 'recording') ? last.suggestion : undefined
+  const draft = hints && last?.role === 'partner' && last.suggestion.fi && (chat.phase === 'idle' || chat.phase === 'recording') ? last.suggestion : undefined
   const size = useStageSize()
 
   useEffect(() => {
@@ -124,7 +126,7 @@ function Room({ chat, register, onRegister }: SessionProps) {
 
       <footer className="safe-bottom flex flex-col items-center gap-4 px-5 pt-3 landscape:lg:col-start-2 landscape:lg:row-start-3">
         {chat.notice && <Callout tone="warning" className="w-full max-w-xl">{chat.notice}</Callout>}
-        <Controls chat={chat} />
+        <Controls chat={chat} hints={hints} onHints={toggleHints} />
       </footer>
     </div>
   )

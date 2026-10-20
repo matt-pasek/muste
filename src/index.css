@@ -278,6 +278,7 @@
 .draft p:first-child { transition: color var(--usva-duration-base) var(--usva-ease-soft); }
 .draft[data-recording] p:first-child { color: var(--usva-ink); }
 
+.hint-toggle[aria-pressed='true'] { color: var(--usva-accent); }
 .listen-button { position: relative; }
 .listen-button::before { content: ''; position: absolute; inset: -6px; border-radius: 999px; }
 

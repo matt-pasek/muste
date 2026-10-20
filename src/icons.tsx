@@ -98,6 +98,13 @@ export const AgainIcon = () => (
   </Icon>
 )
 
+export const HintIcon = () => (
+  <Icon>
+    <path d="M9 18h6M10 21h4" />
+    <path d="M12 3a6 6 0 00-3.6 10.8c.6.5 1 1.2 1.1 2.2h5c.1-1 .5-1.7 1.1-2.2A6 6 0 0012 3z" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M6 6l12 12M18 6L6 18" />
