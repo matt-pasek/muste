@@ -28,6 +28,9 @@ async function post(body: object, signal: AbortSignal): Promise<ConverseTurn | {
 }
 
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err))
+const isAbort = (err: unknown) => err instanceof DOMException && err.name === 'AbortError'
+
+export type Chat = ReturnType<typeof useConversation>
 
 export function useConversation(page: () => string, register: Register) {
   const [phase, setPhase] = useState<Phase>('idle')
@@ -64,14 +67,7 @@ export function useConversation(page: () => string, register: Register) {
     [page, register],
   )
 
-  const open = useCallback(async () => {
-    primeAudio()
-    stopSpeech()
-    history.current = []
-    setEntries([])
-    setScene('')
-    setNotice('')
-    setPhase('opening')
+  const begin = useCallback(async () => {
     try {
       const turn = await request()
       if (!turn || !('reply' in turn)) return setPhase('idle')
@@ -79,10 +75,22 @@ export function useConversation(page: () => string, register: Register) {
       append([{ role: 'partner', text: turn.reply, en: turn.reply_en }])
       await say(turn.reply)
     } catch (err) {
+      if (isAbort(err)) return
       setNotice(message(err))
       setPhase('idle')
     }
   }, [append, request, say])
+
+  const open = useCallback(() => {
+    primeAudio()
+    stopSpeech()
+    history.current = []
+    setEntries([])
+    setScene('')
+    setNotice('')
+    setPhase('opening')
+    return begin()
+  }, [begin])
 
   const send = useCallback(async () => {
     const current = recording.current
@@ -102,6 +110,7 @@ export function useConversation(page: () => string, register: Register) {
       ])
       await say(turn.reply)
     } catch (err) {
+      if (isAbort(err)) return
       setNotice(message(err))
       setPhase('idle')
     }
@@ -115,6 +124,7 @@ export function useConversation(page: () => string, register: Register) {
       recording.current = await startRecording(() => void send())
       setPhase('recording')
     } catch (err) {
+      if (isAbort(err)) return
       setNotice(message(err))
       setPhase('idle')
     }
@@ -133,6 +143,15 @@ export function useConversation(page: () => string, register: Register) {
     return 0
   }, [phase])
 
+  const close = useCallback(() => {
+    inflight.current?.abort()
+    const current = recording.current
+    recording.current = null
+    void current?.cancel()
+    stopSpeech()
+    setPhase('idle')
+  }, [])
+
   useEffect(
     () => () => {
       inflight.current?.abort()
@@ -142,5 +161,5 @@ export function useConversation(page: () => string, register: Register) {
     [],
   )
 
-  return { phase, entries, scene, notice, open, talk, send, cancel, level }
+  return { phase, entries, scene, notice, open, close, talk, send, cancel, level }
 }

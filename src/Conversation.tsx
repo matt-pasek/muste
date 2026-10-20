@@ -6,8 +6,8 @@ import { CloseIcon, MicIcon, StopIcon } from './icons'
 import { ListenButton } from './ListenButton'
 import { RegisterToggle } from './RegisterToggle'
 import { SpeedToggle } from './SpeedToggle'
-import { useConversation, type Entry, type Phase } from './useConversation'
-import { useRegister } from './useRegister'
+import type { Chat, Entry, Phase } from './useConversation'
+import type { Register } from './useRegister'
 import { Virva } from './virva/virva'
 import type { VirvaState } from './virva/virva-geometry'
 
@@ -29,9 +29,10 @@ const STATUS: Record<Phase, string> = {
 
 const SETTLE_MS = 400
 
-type Props = { open: boolean; page: () => string; onClose: () => void }
+type SessionProps = { chat: Chat; register: Register; onRegister: (r: Register) => void }
+type Props = SessionProps & { open: boolean; onClose: () => void }
 
-export function Conversation({ open, page, onClose }: Props) {
+export function Conversation({ open, onClose, ...session }: Props) {
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <Dialog.Content className="flex h-[min(88dvh,920px)] w-[calc(100vw-32px)] max-w-2xl flex-col overflow-hidden p-0">
@@ -40,23 +41,14 @@ export function Conversation({ open, page, onClose }: Props) {
         >
           <CloseIcon />
         </Dialog.Close>
-        {open && <Session page={page} />}
+        {open && <Session {...session} />}
       </Dialog.Content>
     </Dialog>
   )
 }
 
-function Session({ page }: { page: () => string }) {
-  const [register, setRegister] = useRegister()
-  const chat = useConversation(page, register)
-  const started = useRef(false)
+function Session({ chat, register, onRegister }: SessionProps) {
   const bottom = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (started.current) return
-    started.current = true
-    void chat.open()
-  }, [chat])
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
@@ -70,7 +62,7 @@ function Session({ page }: { page: () => string }) {
           <p className="text-muted">{chat.scene || 'A short role-play from the page you are on.'}</p>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <RegisterToggle value={register} onChange={setRegister} />
+          <RegisterToggle value={register} onChange={onRegister} />
           <SpeedToggle />
         </div>
       </header>
@@ -149,7 +141,7 @@ function Line({ entry }: { entry: Entry }) {
   )
 }
 
-function Controls({ chat }: { chat: ReturnType<typeof useConversation> }) {
+function Controls({ chat }: { chat: Chat }) {
   if (chat.phase === 'recording') {
     return (
       <div className="flex items-center gap-3">
