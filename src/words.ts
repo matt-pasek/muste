@@ -31,7 +31,12 @@ const sameRow = (a: Rect, b: Rect) => {
   return overlap > 0.5 * Math.min(a.h, b.h)
 }
 
-const isNoise = (w: OcrWord) => w.conf < NOISE_CONF || !(HAS_LETTER.test(w.text) || /\d/.test(w.text))
+const PAGE_TEXT_LIMIT = 3500
+
+export const textOf = (words: OcrWord[]) =>
+  words.filter((w) => !isNoise(w)).map((w) => w.text).join(' ').slice(0, PAGE_TEXT_LIMIT)
+
+const isNoise =(w: OcrWord) => w.conf < NOISE_CONF || !(HAS_LETTER.test(w.text) || /\d/.test(w.text))
 
 export function lineOf(words: OcrWord[], word: OcrWord) {
   const row = words

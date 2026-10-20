@@ -76,6 +76,13 @@ export const MicIcon = () => (
   </Icon>
 )
 
+export const TalkIcon = () => (
+  <Icon>
+    <path d="M5 18.5V7a2.5 2.5 0 012.5-2.5h9A2.5 2.5 0 0119 7v6a2.5 2.5 0 01-2.5 2.5H9z" />
+    <path d="M9 9.5v2M12 8.5v4M15 9.5v2" />
+  </Icon>
+)
+
 export const CloseIcon = () => (
   <Icon>
     <path d="M6 6l12 12M18 6L6 18" />

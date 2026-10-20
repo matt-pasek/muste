@@ -8,6 +8,7 @@ import { parseAnswerPage, validateAnswers } from './server/answers.ts'
 import { lookupWord, validateWord } from './server/dictionary.ts'
 import { explainEvents } from './server/explain.ts'
 import { grammarGuide, validateTopic } from './server/grammar.ts'
+import { converse, validateConverse } from './server/converse.ts'
 import { shadow, validateShadow } from './server/shadow.ts'
 import { restRun, type AiRun } from './server/stt.ts'
 import { synthesize, validateSpeech, type TtsConfig } from './server/tts.ts'
@@ -85,7 +86,8 @@ function devApi(apiKey: string | undefined, tts: TtsConfig, ai: AiRun): Plugin {
       server.middlewares.use('/api/grammar', route(grammarHandler))
       server.middlewares.use('/api/dict', dictRoute)
       server.middlewares.use('/api/tts', ttsRoute(tts))
-      server.middlewares.use('/api/shadow', route(jsonHandler((key, body, signal) => shadow(key, ai, validateShadow(body), signal))))
+      server.middlewares.use('/api/converse', route(jsonHandler((key, body, signal) => converse(key, ai, validateConverse(body), signal))))
+      server.middlewares.use('/api/shadow',route(jsonHandler((key, body, signal) => shadow(key, ai, validateShadow(body), signal))))
     },
   }
 }

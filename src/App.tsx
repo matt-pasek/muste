@@ -14,7 +14,10 @@ import { GestureToast } from './GestureToast'
 import { redo, undo } from './history'
 import { DEFAULT_INK, INKS } from './ink'
 import { loadLastPage, loadPdf, saveLastPage, savePdf, unstretchInk, type StoredPdf } from './db'
+import { Conversation } from './Conversation'
 import { Dock } from './Dock'
+import { getWords } from './ocr'
+import { textOf } from './words'
 import { ExplainPanel, type SheetState } from './ExplainPanel'
 import { BookIcon } from './icons'
 import { explain, type Anchor, type LookupTarget, type PartialExplanation } from './lookup'
@@ -95,7 +98,16 @@ export default function App() {
     })
   }, [doc, pdf])
 
-  const onVisible = useCallback((n: number) => pdf && saveLastPage(pdf.name, n), [pdf])
+  const visiblePage = useRef(1)
+  const onVisible = useCallback(
+    (n: number) => {
+      visiblePage.current = n
+      if (pdf) saveLastPage(pdf.name, n)
+    },
+    [pdf],
+  )
+  const pageText = useCallback(() => (pdf ? textOf(getWords(pdf.name, visiblePage.current) ?? []) : ''), [pdf])
+  const [talking, setTalking] = useState(false)
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -197,8 +209,10 @@ export default function App() {
             saveInkColor(c)
           }}
           menu={<BookMenu doc={doc} pdf={pdf.name} onOpen={openFile} />}
+          onTalk={() => setTalking(true)}
         />
       )}
+      <Conversation open={talking} page={pageText} onClose={() => setTalking(false)} />
       <GestureToast />
       <ReferenceSheet reference={reference} onClose={() => setReference(null)} />
       {active && <ExplainPanel state={active.sheet} anchor={active.anchor} answers={answers} onClose={close} />}

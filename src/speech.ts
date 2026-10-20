@@ -1,5 +1,6 @@
 import { createContext, useContext, useSyncExternalStore } from 'react'
 import { loadSpeech, saveSpeech } from './db'
+import { meter } from './meter'
 
 export type SpeechStatus = 'idle' | 'loading' | 'playing' | 'error'
 type Current = { key: string; status: SpeechStatus; message?: string }
@@ -45,6 +46,7 @@ let current: Current | null = null
 let context: AudioContext | null = null
 let source: AudioBufferSourceNode | null = null
 let element: PitchAudio | null = null
+let output: { node: AnalyserNode; level: () => number } | null = null
 let elementUrl = ''
 let request = 0
 const listeners = new Set<() => void>()
@@ -117,15 +119,32 @@ function silentWav() {
   return URL.createObjectURL(new Blob([view.buffer], { type: 'audio/wav' }))
 }
 
-function stretchElement() {
+function outputNode(ctx: AudioContext) {
+  if (!output) {
+    const node = ctx.createAnalyser()
+    node.fftSize = 1024
+    node.connect(ctx.destination)
+    output = { node, level: meter(node) }
+  }
+  return output.node
+}
+
+export const outputLevel = () => output?.level() ?? 0
+
+function stretchElement(ctx: AudioContext) {
   if (!element) {
     element = new Audio() as PitchAudio
     element.preservesPitch = true
     element.webkitPreservesPitch = true
     element.src = silentWav()
     void element.play().catch(() => undefined)
+    ctx.createMediaElementSource(element).connect(outputNode(ctx))
   }
   return element
+}
+
+export function primeAudio() {
+  stretchElement(audioContext())
 }
 
 export function stop() {
@@ -141,7 +160,7 @@ async function playFast(ctx: AudioContext, data: ArrayBuffer, id: number) {
   if (id !== request) return false
   const node = ctx.createBufferSource()
   node.buffer = buffer
-  node.connect(ctx.destination)
+  node.connect(outputNode(ctx))
   node.onended = () => source === node && stop()
   source = node
   node.start()
@@ -165,7 +184,7 @@ export async function speak(text: string, slow = false) {
   const key = speechKey(text, slow)
   const ctx = audioContext()
   const rate = slow ? SLOW_RATE : speed
-  const player = rate === 1 ? null : stretchElement()
+  const player = rate === 1 ? null : stretchElement(ctx)
   publish({ key, status: 'loading' })
   try {
     const data = await audio(text)
@@ -174,6 +193,22 @@ export async function speak(text: string, slow = false) {
   } catch (err) {
     if (id === request) publish({ key, status: 'error', message: err instanceof Error ? err.message : String(err) })
   }
+}
+
+export async function speakUntilDone(text: string) {
+  const key = speechKey(text)
+  await speak(text)
+  if (current?.key !== key || current.status !== 'playing') {
+    if (current?.key === key && current.status === 'error') throw new Error(current.message)
+    return
+  }
+  await new Promise<void>((resolve) => {
+    const unsubscribe = subscribe(() => {
+      if (current?.key === key && current.status === 'playing') return
+      unsubscribe()
+      resolve()
+    })
+  })
 }
 
 export function useSpeech(key: string) {

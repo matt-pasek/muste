@@ -1,6 +1,7 @@
 import { SulaSegmented } from '@usva-ui/react/sula/sula-segmented'
 import type { CSSProperties, ReactNode } from 'react'
-import { EraserIcon, ExplainIcon, PenIcon } from './icons'
+import { Button } from '@usva-ui/react/primitives/button'
+import { EraserIcon, ExplainIcon, PenIcon, TalkIcon } from './icons'
 import { INKS } from './ink'
 import type { Tool } from './PdfPage'
 
@@ -16,14 +17,18 @@ type Props = {
   inkColor: string
   onInkColor: (color: string) => void
   menu: ReactNode
+  onTalk: () => void
 }
 
-export function Dock({ tool, onTool, inkColor, onInkColor, menu }: Props) {
+export function Dock({ tool, onTool, inkColor, onInkColor, menu, onTalk }: Props) {
   const pen = tool === 'pen'
   return (
     <div className="safe-bottom pointer-events-none fixed inset-x-0 bottom-0 z-dropdown flex justify-center px-4">
       <nav className="fade pointer-events-auto flex items-center gap-1 rounded-full border border-border bg-overlay p-1.5 shadow-floating">
         {menu}
+        <Button variant="ghost" shape="pill" iconOnly aria-label="Talk in Finnish" title="Talk in Finnish" onClick={onTalk}>
+          <TalkIcon />
+        </Button>
         <span className="mx-1 h-6 w-px bg-border" aria-hidden />
         <SulaSegmented
           aria-label="Tool"

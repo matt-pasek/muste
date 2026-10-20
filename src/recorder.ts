@@ -1,10 +1,11 @@
+import { meter } from './meter'
 import { audioContext, setAudioSession, stop as stopSpeech } from './speech'
 
 const RATE = 16000
 const MAX_SECONDS = 30
 const RAW_MIC = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
 
-export type Recording = { stop: () => Promise<string>; cancel: () => Promise<void> }
+export type Recording = { stop: () => Promise<string>; cancel: () => Promise<void>; level: () => number }
 
 export async function startRecording(onLimit: () => void): Promise<Recording> {
   stopSpeech()
@@ -17,11 +18,17 @@ export async function startRecording(onLimit: () => void): Promise<Recording> {
     setAudioSession('playback')
     throw new Error(err instanceof DOMException && err.name === 'NotAllowedError' ? 'Microphone access was blocked' : String(err))
   }
+  const analyser = ctx.createAnalyser()
+  analyser.fftSize = 1024
+  const input = ctx.createMediaStreamSource(stream)
+  input.connect(analyser)
+  const level = meter(analyser)
   const chunks: Blob[] = []
   const recorder = new MediaRecorder(stream)
   recorder.ondataavailable = (e) => chunks.push(e.data)
   const stopped = new Promise<Blob>((resolve) => {
     recorder.onstop = () => {
+      input.disconnect()
       stream.getTracks().forEach((t) => t.stop())
       setAudioSession('playback')
       resolve(new Blob(chunks, { type: recorder.mimeType }))
@@ -42,6 +49,7 @@ export async function startRecording(onLimit: () => void): Promise<Recording> {
       end()
       await stopped
     },
+    level,
   }
 }
 

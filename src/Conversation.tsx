@@ -1,0 +1,172 @@
+import { Button } from '@usva-ui/react/primitives/button'
+import { Callout } from '@usva-ui/react/primitives/callout'
+import { Dialog } from '@usva-ui/react/primitives/dialog'
+import { useEffect, useRef, useState } from 'react'
+import { CloseIcon, MicIcon, StopIcon } from './icons'
+import { ListenButton } from './ListenButton'
+import { RegisterToggle } from './RegisterToggle'
+import { SpeedToggle } from './SpeedToggle'
+import { useConversation, type Entry, type Phase } from './useConversation'
+import { useRegister } from './useRegister'
+import { Virva } from './virva/virva'
+import type { VirvaState } from './virva/virva-geometry'
+
+const VIRVA_STATE: Record<Phase, VirvaState> = {
+  idle: 'idle',
+  opening: 'thinking',
+  recording: 'listening',
+  thinking: 'thinking',
+  speaking: 'responding',
+}
+
+const STATUS: Record<Phase, string> = {
+  idle: 'Your turn',
+  opening: 'Setting the scene…',
+  recording: 'Listening…',
+  thinking: 'Thinking…',
+  speaking: 'Speaking…',
+}
+
+const SETTLE_MS = 400
+
+type Props = { open: boolean; page: () => string; onClose: () => void }
+
+export function Conversation({ open, page, onClose }: Props) {
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <Dialog.Content className="flex h-[min(88dvh,920px)] w-[calc(100vw-32px)] max-w-2xl flex-col overflow-hidden p-0">
+        <Dialog.Close
+          render={<Button variant="ghost" size="sm" shape="pill" iconOnly aria-label="Close" className="absolute top-3 right-3 z-base" />}
+        >
+          <CloseIcon />
+        </Dialog.Close>
+        {open && <Session page={page} />}
+      </Dialog.Content>
+    </Dialog>
+  )
+}
+
+function Session({ page }: { page: () => string }) {
+  const [register, setRegister] = useRegister()
+  const chat = useConversation(page, register)
+  const started = useRef(false)
+  const bottom = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (started.current) return
+    started.current = true
+    void chat.open()
+  }, [chat])
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [chat.entries.length, chat.phase])
+
+  return (
+    <>
+      <header className="flex flex-col gap-3 px-6 pt-6 pr-14 sm:px-8">
+        <div className="flex flex-col gap-1">
+          <Dialog.Title className="font-mono text-xs tracking-wider text-accent uppercase">Puhu · conversation</Dialog.Title>
+          <p className="text-muted">{chat.scene || 'A short role-play from the page you are on.'}</p>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <RegisterToggle value={register} onChange={setRegister} />
+          <SpeedToggle />
+        </div>
+      </header>
+      <LiveVirva phase={chat.phase} level={chat.level} />
+      <ol className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain px-6 pb-4 select-text sm:px-8">
+        {chat.entries.map((entry, i) => <Line key={i} entry={entry} />)}
+        <div ref={bottom} />
+      </ol>
+      <footer className="safe-bottom flex flex-col items-center gap-2 border-t border-border px-6 pt-4">
+        {chat.notice && <Callout tone="warning" className="w-full">{chat.notice}</Callout>}
+        <Controls chat={chat} />
+      </footer>
+    </>
+  )
+}
+
+function LiveVirva({ phase, level }: { phase: Phase; level: () => number }) {
+  const [settled, setSettled] = useState(false)
+  const [value, setValue] = useState(0)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setSettled(true), SETTLE_MS)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (phase !== 'recording' && phase !== 'speaking') return
+    let frame = requestAnimationFrame(function tick() {
+      setValue(level())
+      frame = requestAnimationFrame(tick)
+    })
+    return () => {
+      cancelAnimationFrame(frame)
+      setValue(0)
+    }
+  }, [phase, level])
+
+  return (
+    <div className="flex flex-col items-center gap-1 py-4">
+      <div className="grid size-[148px] place-items-center">
+        {settled && <Virva state={VIRVA_STATE[phase]} level={value} size={148} label={STATUS[phase]} />}
+      </div>
+      <p className="text-sm text-muted" aria-live="polite">{STATUS[phase]}</p>
+    </div>
+  )
+}
+
+function Line({ entry }: { entry: Entry }) {
+  if (entry.role === 'partner') {
+    return (
+      <li className="enter flex max-w-[85%] flex-col gap-0.5 self-start rounded-2xl rounded-bl-md bg-surface-2 px-4 py-3">
+        <p className="font-medium">
+          {entry.text}
+          <ListenButton text={entry.text} className="ml-1" />
+          <ListenButton text={entry.text} slow />
+        </p>
+        <p className="text-sm text-muted">{entry.en}</p>
+      </li>
+    )
+  }
+  return (
+    <li className="enter flex max-w-[85%] flex-col items-end gap-1.5 self-end">
+      <p className="rounded-2xl rounded-br-md bg-accent-tint px-4 py-3 text-on-tint">{entry.heard}</p>
+      {entry.corrections.map((c, i) => (
+        <div key={i} className="flex flex-col gap-0.5 rounded-xl border border-border px-3 py-2 text-sm">
+          <p>
+            <span className="text-muted line-through">{c.said}</span>
+            <span className="text-muted"> → </span>
+            <span className="font-semibold">{c.better}</span>
+            <ListenButton text={c.better} className="ml-0.5" />
+          </p>
+          <p className="text-muted">{c.note}</p>
+        </div>
+      ))}
+    </li>
+  )
+}
+
+function Controls({ chat }: { chat: ReturnType<typeof useConversation> }) {
+  if (chat.phase === 'recording') {
+    return (
+      <div className="flex items-center gap-3">
+        <Button variant="solid" shape="pill" size="lg" onClick={() => void chat.send()}>
+          <StopIcon /> Done
+        </Button>
+        <button className="ref-link" onClick={chat.cancel}>Cancel</button>
+      </div>
+    )
+  }
+  const busy = chat.phase === 'opening' || chat.phase === 'thinking'
+  return (
+    <div className="flex items-center gap-3">
+      <Button variant="solid" shape="pill" size="lg" disabled={busy} onClick={() => void chat.talk()}>
+        <MicIcon /> {chat.phase === 'speaking' ? 'Interrupt and talk' : 'Talk'}
+      </Button>
+      <button className="ref-link" disabled={busy} onClick={() => void chat.open()}>New scene</button>
+    </div>
+  )
+}
