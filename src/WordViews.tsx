@@ -49,7 +49,14 @@ export function Sentence({ fi, spoken, en, words, register, large = false }: Sen
       </p>
       {showSpoken && <p className="text-sm text-muted">{fi}</p>}
       {en && <p className={large ? 'mt-0.5 text-muted' : 'text-sm text-muted'}>{en}</p>}
-      <ShadowFeedback state={practice.state} target={target} onRetry={practice.toggle} onClose={practice.reset} />
+      <ShadowFeedback
+        state={practice.state}
+        target={target}
+        onRetry={practice.toggle}
+        onClose={practice.reset}
+        onCancel={practice.cancel}
+        onRestart={practice.restart}
+      />
     </>
   )
 }

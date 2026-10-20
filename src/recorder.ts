@@ -4,7 +4,7 @@ const RATE = 16000
 const MAX_SECONDS = 30
 const RAW_MIC = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
 
-export type Recording = { stop: () => Promise<string>; cancel: () => void }
+export type Recording = { stop: () => Promise<string>; cancel: () => Promise<void> }
 
 export async function startRecording(onLimit: () => void): Promise<Recording> {
   stopSpeech()
@@ -38,7 +38,10 @@ export async function startRecording(onLimit: () => void): Promise<Recording> {
       end()
       return wavBase64(await toMono16k(ctx, await stopped))
     },
-    cancel: end,
+    cancel: async () => {
+      end()
+      await stopped
+    },
   }
 }
 

@@ -29,7 +29,7 @@ export function useShadow(target: string) {
   const value = state.target === target ? state.value : { status: 'idle' as const }
   const update = (next: ShadowState) => setState({ target, value: next })
 
-  useEffect(() => () => recording.current?.cancel(), [])
+  useEffect(() => () => void recording.current?.cancel(), [])
 
   const finish = async () => {
     const current = recording.current
@@ -53,8 +53,23 @@ export function useShadow(target: string) {
     }
   }
 
+  const discard = async () => {
+    const current = recording.current
+    recording.current = null
+    await current?.cancel()
+  }
+
   const toggle = () => (value.status === 'recording' ? finish() : start())
   const reset = () => update({ status: 'idle' })
+  const cancel = () => {
+    void discard()
+    reset()
+  }
+  const restart = async () => {
+    update({ status: 'starting' })
+    await discard()
+    await start()
+  }
 
-  return { state: value, toggle, reset }
+  return { state: value, toggle, reset, cancel, restart }
 }

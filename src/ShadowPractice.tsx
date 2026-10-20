@@ -31,9 +31,16 @@ export function ShadowButton({ state, onToggle, className = '' }: ButtonProps) {
   )
 }
 
-type FeedbackProps = { state: ShadowState; target: string; onRetry: () => void; onClose: () => void }
+type FeedbackProps = {
+  state: ShadowState
+  target: string
+  onRetry: () => void
+  onClose: () => void
+  onCancel: () => void
+  onRestart: () => void
+}
 
-export function ShadowFeedback({ state, target, onRetry, onClose }: FeedbackProps) {
+export function ShadowFeedback({ state, target, onRetry, onClose, onCancel, onRestart }: FeedbackProps) {
   if (state.status === 'idle' || state.status === 'starting') return null
   return (
     <div className="enter shadow-card relative mt-2 flex flex-col gap-2 rounded-xl bg-surface-2 px-3.5 py-3 pr-10 text-sm">
@@ -42,7 +49,15 @@ export function ShadowFeedback({ state, target, onRetry, onClose }: FeedbackProp
           <CloseIcon />
         </Button>
       )}
-      {state.status === 'recording' && <p className="flex items-center gap-2 text-muted"><span className="rec-dot" />Listening… tap ■ when you're done.</p>}
+      {state.status === 'recording' && (
+        <>
+          <p className="flex items-center gap-2 text-muted"><span className="rec-dot" />Listening… tap ■ when you're done.</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button className="ref-link" onClick={onRestart}>Start over</button>
+            <button className="ref-link" onClick={onCancel}>Cancel</button>
+          </div>
+        </>
+      )}
       {state.status === 'checking' && <p className="flex items-center gap-2 text-muted"><Spinner size="sm" />Checking your pronunciation…</p>}
       {state.status === 'error' && <p className="text-danger-ink">{state.message}</p>}
       {state.status === 'done' && <Result result={state.result} target={target} />}
